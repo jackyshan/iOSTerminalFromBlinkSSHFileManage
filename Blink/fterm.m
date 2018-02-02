@@ -147,5 +147,6 @@ static int closefn(void *handler)
   }
 
   [_wv write:output];
+  
 }
 @end

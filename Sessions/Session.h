@@ -59,6 +59,9 @@ typedef struct SessionParams {
 - (void)sessionFinished;
 - (void)indexCommand:(NSString *)cmdLine;
 
+@optional
+- (void)sshConnected:(BOOL)isConnected;
+
 @end
 
 @interface Session : NSObject {

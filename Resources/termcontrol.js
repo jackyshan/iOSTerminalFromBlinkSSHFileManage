@@ -1,5 +1,5 @@
 var write_to_term = function(data) {
-    t.io.print(data);
+   t.io.print(data);
 }
 var sigwinch = function() {
     // This was removed as in theory the next resize would also take care of it.

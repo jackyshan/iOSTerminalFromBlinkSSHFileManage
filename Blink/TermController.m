@@ -38,13 +38,14 @@
 #import "MCPSession.h"
 #import "Session.h"
 #import "fterm.h"
+#import "FileCommandViewController.h"
 
 NSString * const BKUserActivityTypeCommandLine = @"com.blink.cmdline";
 NSString * const BKUserActivityCommandLineKey = @"com.blink.cmdline.key";
 
 static NSDictionary *bkModifierMaps = nil;
 
-@interface TermController () <TerminalDelegate, SessionDelegate>
+@interface TermController () <TerminalDelegate, SessionDelegate, FileCommandDelegate>
 @end
 
 @implementation TermController {
@@ -247,7 +248,7 @@ static NSDictionary *bkModifierMaps = nil;
   // Disconnect message handler
   [_terminal.webView.configuration.userContentController removeScriptMessageHandlerForName:@"interOp"];
 
-  [_session kill];
+//  [_session kill];
 }
 
 - (void)viewDidLoad
@@ -346,6 +347,29 @@ static NSDictionary *bkModifierMaps = nil;
 - (void)sessionFinished
 {
   [_delegate terminalHangup:self];
+}
+
+- (void)sshConnected:(BOOL)isConnected {
+  if (isConnected == false) {
+    return;
+  }
+  
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    FileCommandViewController *vc = [[FileCommandViewController alloc] init];
+    vc.delegate = self;
+    UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:vc];
+    [self presentViewController:navi animated:YES completion:nil];
+  });
+  
+}
+
+#pragma mark FileCommandDelegate
+- (void)excuteCommand:(NSString *)command {
+  [self write:command];
+}
+
+- (void)receiveData:(NSString *)data {
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"kCommandReceived" object:data];
 }
 
 #pragma mark Notifications

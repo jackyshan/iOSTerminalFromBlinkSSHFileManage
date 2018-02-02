@@ -155,6 +155,7 @@
 {
   [self.delegate indexCommand:args];
   _childSession = [[SSHSession alloc] initWithStream:_stream];
+  _childSession.delegate = self.delegate;
   [_childSession executeAttachedWithArgs:args];
   _childSession = nil;
 }

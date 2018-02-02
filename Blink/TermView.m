@@ -364,6 +364,8 @@ NSString *const TermViewAutoRepeateSeq = @"autoRepeatSeq:";
 // Write data to terminal control
 - (void)write:(NSString *)data
 {
+  [_delegate receiveData:data];
+  
   NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@[ data ] options:0 error:nil];
   NSString *jsString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
   NSString *jsScript = [NSString stringWithFormat:@"write_to_term(%@[0])", jsString];

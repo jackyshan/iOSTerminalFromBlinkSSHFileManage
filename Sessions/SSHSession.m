@@ -505,8 +505,12 @@ static void kbd_callback(const char *name, int name_len,
 
   if (!succ) {
     *error = [NSError errorWithDomain:@"blk.ssh.libssh2" code:-1 userInfo:@{ NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Permission denied (%s).", userauthlist] }];
+    
+    [self.delegate sshConnected:NO];
     return;
   }
+  
+  [self.delegate sshConnected:YES];
 
   return;
 }

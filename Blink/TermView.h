@@ -46,6 +46,7 @@ extern NSString * const TermViewAutoRepeateSeq;
 - (void)terminalIsReady;
 - (void)updateTermRows:(NSNumber *)rows Cols:(NSNumber *)cols;
 - (void)fontSizeChanged:(NSNumber *)size;
+- (void)receiveData:(NSString *)data;
 @end
 
 @interface BLWebView: WKWebView
