@@ -10,6 +10,10 @@
 
 @interface FileCommandViewController ()
 
+@property (weak, nonatomic) IBOutlet UITableView *tableView;
+
+@property (strong, nonatomic) NSArray *datas;
+
 @end
 
 @implementation FileCommandViewController
@@ -32,9 +36,12 @@
   
   
   /* -------------- 其他 -------------- */
-  [[NSNotificationCenter defaultCenter] addObserverForName:@"kCommandReceived" object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification * _Nonnull note) {
-//    NSLog(@"%@", note.object);
+}
 
+- (void)viewDidAppear:(BOOL)animated {
+  [[NSNotificationCenter defaultCenter] addObserverForName:@"kCommandReceived" object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification * _Nonnull note) {
+    //    NSLog(@"%@", note.object);
+    
     NSString *checkString = note.object;
     //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
     NSString *pattern = @"\\[1m\\[36m.+\\[";
@@ -42,10 +49,10 @@
     NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
     //2.利用规则测试字符串获取匹配结果
     NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
-
+    
     if (results.count > 0) {
-//      NSLog(@"%@", results);
-      
+      //      NSLog(@"%@", results);
+      NSMutableArray *reguslars = [NSMutableArray array];
       [results enumerateObjectsUsingBlock:^(NSTextCheckingResult * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         NSString *subStr = [checkString substringWithRange:obj.range];
         NSString *checkString = subStr;
@@ -67,18 +74,24 @@
           
           if (results.count > 0) {
             NSTextCheckingResult *res = results[0];
-            NSLog(@"%@", [checkString substringWithRange:NSMakeRange(0, res.range.location-1)]);
+            NSString *sst = [checkString substringWithRange:NSMakeRange(0, res.range.location-1)];
+            NSLog(@"%@", sst);
+            [reguslars addObject:sst];
           }
-
+          
         }];
-
+        
       }];
+      
+      _datas = reguslars;
+      [_tableView reloadData];
     }
   }];
+
 }
 
-- (void)dealloc {
-  [[NSNotificationCenter defaultCenter] removeObserver:self];
+- (void)viewDidDisappear:(BOOL)animated {
+  [[NSNotificationCenter defaultCenter] removeObserver:self name:@"kCommandReceived" object:nil];
 }
 
 - (void)viewDidLayoutSubviews {
@@ -86,6 +99,47 @@
 }
 
 #pragma mark - 二、代理
+#pragma mark UITableViewDataSource
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+  return _datas.count;
+}
+
+// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
+// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+  UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"kCellIdentifier"];
+  if (cell == nil) {
+    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:@"kCellIdentifier"];
+    cell.textLabel.numberOfLines = 2;
+  }
+  
+  cell.textLabel.text = _datas[indexPath.row];
+  
+  return cell;
+}
+
+#pragma mark UITableViewDelegate
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+  [_delegate excuteCommand:[[NSString alloc] initWithFormat:@"cd %@\n", _datas[indexPath.row]]];
+
+  FileCommandViewController *vc = [[FileCommandViewController alloc] init];
+  vc.delegate = _delegate;
+  [self.navigationController pushViewController:vc animated:true];
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+  return UITableViewCellEditingStyleDelete;
+}
+
+- (nullable NSString *)tableView:(UITableView *)tableView titleForDeleteConfirmationButtonForRowAtIndexPath:(NSIndexPath *)indexPath NS_AVAILABLE_IOS(3_0) __TVOS_PROHIBITED {
+  return @"删除";
+}
+
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+  
+  [_delegate excuteCommand:[[NSString alloc] initWithFormat:@"rm %@\n", _datas[indexPath.row]]];
+}
 
 #pragma mark - 三、事件处理
 
