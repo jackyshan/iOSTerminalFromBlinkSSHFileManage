@@ -29,7 +29,11 @@
   UIBarButtonItem *item1 = [[UIBarButtonItem alloc] initWithTitle:@"关闭" style:UIBarButtonItemStylePlain target:self action:@selector(closeVc)];
   UIBarButtonItem *item2 = [[UIBarButtonItem alloc] initWithTitle:@"刷新" style:UIBarButtonItemStylePlain target:self action:@selector(refreshList)];
   self.navigationItem.rightBarButtonItems = @[item1, item2];
+  UIBarButtonItem *item3 = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(backAction)];
+  self.navigationItem.leftBarButtonItem = item3;
+  
   /* ------------ 添加子控件 ----------- */
+  _datas = [NSArray array];
   
   /* ------------- 初始化 ------------- */
   /* ------------ 加载数据 ------------ */
@@ -38,59 +42,94 @@
   /* -------------- 其他 -------------- */
 }
 
+- (void)backAction {
+  if (self.navigationController.viewControllers.count > 1) {
+    [self.navigationController popViewControllerAnimated:YES];
+  }
+  [_delegate excuteCommand:@"cd ..\n"];
+}
+
 - (void)viewDidAppear:(BOOL)animated {
-  [[NSNotificationCenter defaultCenter] addObserverForName:@"kCommandReceived" object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification * _Nonnull note) {
-    //    NSLog(@"%@", note.object);
-    
-    NSString *checkString = note.object;
-    //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
-    NSString *pattern = @"\\[1m\\[36m.+\\[";
-    //1.1将正则表达式设置为OC规则
-    NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
-    //2.利用规则测试字符串获取匹配结果
-    NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
-    
-    if (results.count > 0) {
-      //      NSLog(@"%@", results);
-      NSMutableArray *reguslars = [NSMutableArray array];
-      [results enumerateObjectsUsingBlock:^(NSTextCheckingResult * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        NSString *subStr = [checkString substringWithRange:obj.range];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(receiveData:) name:@"kCommandReceived" object:nil];
+
+}
+
+- (void)receiveData:(NSNotification * _Nonnull)note {
+  
+  //    NSLog(@"%@", note.object);
+  
+  NSString *checkString = note.object;
+  //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
+  NSString *pattern = @"\\[1m\\[36m.+\\[";
+  //1.1将正则表达式设置为OC规则
+  NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
+  //2.利用规则测试字符串获取匹配结果
+  NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
+  
+  if (results.count > 0) {
+    //      NSLog(@"%@", results);
+    NSMutableArray *reguslars = [NSMutableArray array];
+    [results enumerateObjectsUsingBlock:^(NSTextCheckingResult * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+      NSString *subStr = [checkString substringWithRange:obj.range];
+      NSString *checkString = subStr;
+      //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
+      NSString *pattern = @"\\[1m\\[36m";
+      //1.1将正则表达式设置为OC规则
+      NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
+      //2.利用规则测试字符串获取匹配结果
+      NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
+      [results enumerateObjectsUsingBlock:^(NSTextCheckingResult *  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *subStr = [checkString substringWithRange:NSMakeRange(obj.range.location+obj.range.length, checkString.length-obj.range.length-obj.range.location)];
         NSString *checkString = subStr;
         //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
-        NSString *pattern = @"\\[1m\\[36m";
+        NSString *pattern = @"(?=\\[).+";
         //1.1将正则表达式设置为OC规则
         NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
         //2.利用规则测试字符串获取匹配结果
         NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
-        [results enumerateObjectsUsingBlock:^(NSTextCheckingResult *  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-          NSString *subStr = [checkString substringWithRange:NSMakeRange(obj.range.location+obj.range.length, checkString.length-obj.range.length-obj.range.location)];
-          NSString *checkString = subStr;
-          //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
-          NSString *pattern = @"(?=\\[).+";
-          //1.1将正则表达式设置为OC规则
-          NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
-          //2.利用规则测试字符串获取匹配结果
-          NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
-          
-          if (results.count > 0) {
-            NSTextCheckingResult *res = results[0];
-            NSString *sst = [checkString substringWithRange:NSMakeRange(0, res.range.location-1)];
-            NSLog(@"%@", sst);
-            [reguslars addObject:sst];
-          }
-          
-        }];
+        
+        if (results.count > 0) {
+          NSTextCheckingResult *res = results[0];
+          NSString *sst = [checkString substringWithRange:NSMakeRange(0, res.range.location-1)];
+          NSLog(@"%@", sst);
+          [reguslars addObject:sst];
+        }
         
       }];
       
-      _datas = reguslars;
-      [_tableView reloadData];
-    }
-  }];
+    }];
+    
+    _datas = reguslars;
+  }
+  
+  //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
+  NSString *pattern1 = @"\\s\\w+(\\.\\w+)";
+  //1.1将正则表达式设置为OC规则
+  NSRegularExpression *regular1 = [[NSRegularExpression alloc] initWithPattern:pattern1 options:NSRegularExpressionCaseInsensitive error:nil];
+  //2.利用规则测试字符串获取匹配结果
+  NSArray *results1 = [regular1 matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
+  if (results1.count > 0) {
+    NSMutableArray *reguslars = [NSMutableArray array];
+    [results1 enumerateObjectsUsingBlock:^(NSTextCheckingResult * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+      NSString *subStr = [[checkString substringWithRange:obj.range] stringByReplacingOccurrencesOfString:@" " withString:@""];
+      [reguslars addObject:subStr];
+      
+    }];
+    [reguslars addObjectsFromArray:_datas];
+    _datas = reguslars;
+  }
 
+  if (_datas.count > 0) {
+    NSLog(@"%@", checkString);
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [_tableView reloadData];
+    });
+  }
+  
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
+  [super viewDidDisappear:animated];
   [[NSNotificationCenter defaultCenter] removeObserver:self name:@"kCommandReceived" object:nil];
 }
 
@@ -121,7 +160,21 @@
 
 #pragma mark UITableViewDelegate
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-  [_delegate excuteCommand:[[NSString alloc] initWithFormat:@"cd %@\n", _datas[indexPath.row]]];
+  [tableView deselectRowAtIndexPath:indexPath animated:YES];
+  
+  NSString *checkString = _datas[indexPath.row];
+  //1.创建正则表达式，[0-9]:表示‘0’到‘9’的字符的集合
+  NSString *pattern = @"\\.\\w+";
+  //1.1将正则表达式设置为OC规则
+  NSRegularExpression *regular = [[NSRegularExpression alloc] initWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:nil];
+  //2.利用规则测试字符串获取匹配结果
+  NSArray *results = [regular matchesInString:checkString options:0 range:NSMakeRange(0, checkString.length)];
+  
+  if (results.count > 0) {
+    return;
+  }
+  
+  [_delegate excuteCommand:[[NSString alloc] initWithFormat:@"cd %@\n", checkString]];
 
   FileCommandViewController *vc = [[FileCommandViewController alloc] init];
   vc.delegate = _delegate;
