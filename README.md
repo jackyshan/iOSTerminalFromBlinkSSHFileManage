@@ -1,3 +1,6 @@
+# 修改自Blink，实现SSH文件管理功能
+
+
 # Blink Shell for iOS
 Do Blink! [Blink](http://blink.sh) is the first professional, desktop-grade terminal for iOS that leverages the support of Mosh and SSH. Thus, we can unequivocally guarantee stable connections, lightning-fast speeds, and full configurations. It can and should be your all-day-long tool.
 
